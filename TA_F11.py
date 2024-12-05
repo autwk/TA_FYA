@@ -1,41 +1,71 @@
-class Grammar:
-    def __init__(self, productions):
-        self.productions = {}
-        for prod in productions:
-            lhs, rhs = prod.split('->')
-            if lhs not in self.productions:
-                self.productions[lhs] = []
-            self.productions[lhs].append(rhs)
+print("Введите продукции P:")
+p = [x for x in input().split()]
 
-    def generate_derivations(self, start_symbol, target, current, derivation, marked_derivation):
-        # Если текущая цепочка совпадает с целевой, выводим результат
-        if current == target:
-            print("Вывод:", " -> ".join(derivation))
-            print("Размеченный вывод:", " -> ".join(marked_derivation))
-            return
-        
-        # Ограничение на количество замен, чтобы избежать бесконечной рекурсии
-        if len(derivation) > 10:  # Вы можете изменить это значение по необходимости
-            return
-        
-        # Перебираем каждый символ в текущей цепочке
-        for i in range(len(current)):
-            if current[i] in self.productions:
-                for production in self.productions[current[i]]:
-                    # Создаем новую цепочку, заменяя текущий символ на продукцию
-                    new_current = current[:i] + production + current[i + 1:]
-                    new_derivation = derivation + [current[i] + " -> " + production]
-                    new_marked_derivation = marked_derivation + [current[:i] + "*" + production + "*" + current[i + 1:]]
-                    # Рекурсивно вызываем функцию с новой цепочкой
-                    self.generate_derivations(start_symbol, target, new_current, new_derivation, new_marked_derivation)
 
-def main():
-    productions = ["S->ASA", "A->B", "AS->a", "B->c"]
-    target = "ac"
-    grammar = Grammar(productions)
-    
-    print("Все выводы для цепочки:", target)
-    grammar.generate_derivations("S", target, "S", [], [])
+def generate_language_with_derivations(productions, start_symbol='S', max_depth=6):
+    # Словарь для хранения продукций
+    grammar = {}
+    for production in productions:
+        left, right = production.split('->')
+        if right == 'Л': right = ''
+        if left in grammar:
+            grammar[left].append(right)
+        else:
+            grammar[left] = [right]
 
-if __name__ == "__main__":
-    main()
+    # Функция для рекурсивной генерации строк с размеченными выводами
+    def expand_with_derivation(current, derivation, depth):
+        if depth == 0:
+            return []  # Если достигли глубины, возвращаем пустой список
+
+        # Если в текущей цепочке нет нетерминалов, возвращаем её
+        if all(c not in grammar for c in current):
+            return [(current, derivation + [current])]  # Добавляем конечную цепочку
+
+        derivations = []
+        for i, symbol in enumerate(current):
+            if symbol in grammar:  # Если символ является нетерминалом
+                for production in grammar[symbol]:
+                    # Заменяем символ на продукцию
+                    new_string = current[:i] + production + current[i + 1:]
+                    # Добавляем текущую цепочку с разметкой в вывод
+                    marked_string = (
+                        current[:i] + f"*{symbol}*" + current[i + 1:]
+                    )
+                    derivations.extend(
+                        expand_with_derivation(new_string, derivation + [marked_string], depth - 1)
+                    )
+
+        return derivations
+
+    # Генерация строк с максимальной глубиной
+    language_derivations = []
+    for d in range(1, max_depth + 1):  # Начинаем с глубины 1
+        if d == 1:
+            # Для первой итерации добавляем только начальный символ с разметкой
+            language_derivations.extend(
+                expand_with_derivation(start_symbol, [f"*{start_symbol}*"], d)
+            )
+        else:
+            language_derivations.extend(
+                expand_with_derivation(start_symbol, [], d)
+            )
+
+    return language_derivations
+
+
+# Пример использования
+language_with_derivations = generate_language_with_derivations(p)
+language_with_derivations.sort(key=lambda x: (len(x[0]), x[0]))  # Сортировка по длине и строке
+
+print("Введите цепочку минимальной длины:")
+min_length_word = input()
+
+print("Различные размеченные выводы для цепочки минимальной длины:")
+unique_derivations = set()
+for word, derivations in language_with_derivations:
+    if word == min_length_word:
+        unique_derivations.add(" -> ".join(derivations))
+
+for derivation in sorted(unique_derivations):
+    print(derivation)
