@@ -31,7 +31,7 @@ while x != 'S':
     else: right = table[stroki[tmp]][stolbik[x[r+2]]]
     res = x[:max(0,l-1)] + left + tmp + right + x[r+2:]
     x = res
-    print(res)
+    print(res, "   замена:", sub, '->', tmp)
 
 '''Введите мн-во продукций P:
 S->aA S->c A->Scb
@@ -45,8 +45,8 @@ c - - - = >
 0
 Введите текущую сентенциальную форму:
 a<a<c>c=b>c=b
-a<a<S=c=b>c=b
-a<a=A>c=b
-a<S=c=b
-a=A
-S'''
+a<a<S=c=b>c=b    замена: c -> S
+a<a=A>c=b    замена: Scb -> A
+a<S=c=b    замена: aA -> S
+a=A    замена: Scb -> A
+S    замена: aA -> S'''
